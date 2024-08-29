@@ -3,18 +3,16 @@ package com.example.u7865708va1;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,54 +21,43 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
         textViewTitle = findViewById(R.id.titleTextView);
-        fetchDataFromAPI();
-
+        fetchPostTitle();
     }
 
+    private void fetchPostTitle() {
+        new Thread(() -> {
+            try {
+                URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
+                JSONObject jsonResponse = getJsonObject(url);
+                String title = jsonResponse.getString("title");
 
-    private void fetchDataFromAPI(){
+                // Update the UI
+                runOnUiThread(() -> textViewTitle.setText(title));
 
-        HttpURLConnection connection = null;
-
-        try {
-            URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> textViewTitle.setText(R.string.failed_to_fetch_data));
             }
-            reader.close();
+        }).start();
+    }
 
-            // Parse the JSON response
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            String title = jsonResponse.getString("title");
+    private static JSONObject getJsonObject(URL url) throws IOException, JSONException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
 
-            textViewTitle.setText(title);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e.toString());
-            textViewTitle.setText(R.string.failed_to_fetch_data);
-        }finally {
-            if(connection != null) {
-                connection.disconnect();
-            }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
         }
+        reader.close();
 
-
+        // Parse the JSON response
+        JSONObject jsonResponse = new JSONObject(response.toString());
+        return jsonResponse;
     }
-
 }
