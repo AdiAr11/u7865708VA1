@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">u7865708VA1</string>
     <string name="failed_to_fetch_data">Failed to fetch data</string>
+    <string name="fetch_next_data">Fetch Next Data</string>
 </resources>
